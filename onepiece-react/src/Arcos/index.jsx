@@ -5,8 +5,11 @@ function Arcos() {
   const [arcos, setArcos] = useState([])
 
   useEffect(() => {
+    /* scroll ao entrar na página */
+    window.scrollTo({ top: 0, behavior: "smooth" })
+
     fetch("https://api.api-onepiece.com/v2/sagas/en")
-      .then((res) => res.json())
+      .then((r) => r.json())
       .then((data) => setArcos(data))
       .catch(() => alert("Erro ao carregar arcos"))
   }, [])

@@ -1,83 +1,111 @@
 import { useState, useEffect } from "react"
 import "./style.css"
 
-/* ── TRADUÇÕES ── */
-function traduzirStatus(status) {
-  const mapa = {
-    vivant: "Vivo",
-    living: "Vivo",
-    alive: "Vivo",
-    mort: "Morto",
-    dead: "Morto",
-    unknown: "Desconhecido",
-    inconnu: "Desconhecido",
-  }
-  return mapa[(status || "").toLowerCase()] || status || "—"
+/* ─── HELPERS ──────────────────────────────────────── */
+
+/* Jikan usa formato "Sobrenome, Nome" → converte para "Nome Sobrenome" */
+function formatarNome(nome) {
+  if (!nome) return "—"
+  const partes = nome.split(", ")
+  return partes.length === 2 ? `${partes[1]} ${partes[0]}` : nome
 }
 
-function traduzirCargo(job) {
-  const mapa = {
-    Captain: "Capitão",
-    "Vice-Captain": "Vice-Capitão",
-    Navigator: "Navegadora",
-    Cook: "Cozinheiro",
-    Sniper: "Atirador",
-    Doctor: "Médico",
-    Archaeologist: "Arqueóloga",
-    Musician: "Músico",
-    Helmsman: "Timoneiro",
-    Shipwright: "Carpinteiro naval",
-    "First mate": "Primeiro Imediato",
-    Admiral: "Almirante",
-    "Vice Admiral": "Vice-Almirante",
-    Commander: "Comandante",
-    Pirate: "Pirata",
-    Marine: "Marinheiro",
-    Warlord: "Shichibukai",
-    Emperor: "Yonko",
-    Empress: "Imperatriz",
-    Swordsman: "Espadachim",
-    Fighter: "Lutador",
-    Assassin: "Assassino",
-  }
-  return mapa[job] || job || "—"
+function traduzirRole(role) {
+  const mapa = { Main: "Principal", Supporting: "Secundário", Background: "Coadjuvante" }
+  return mapa[role] || role || "—"
 }
 
-function formatarIdade(age) {
-  if (!age) return "—"
-  return age.replace(" ans", " anos").replace(" ans", " ano")
+function corRole(role) {
+  if (role === "Main")       return { bg: "rgba(239,68,68,0.15)",  cor: "#ef4444" }
+  if (role === "Supporting") return { bg: "rgba(59,130,246,0.15)", cor: "#3b82f6" }
+  return                            { bg: "rgba(100,116,139,0.15)",cor: "#94a3b8" }
 }
 
-function formatarNomeCrew(crew) {
-  if (!crew) return null
-  // usa o roman_name (japonês) se disponível, senão o nome
-  return crew.roman_name || crew.name || null
-}
-
-/* ── COMPONENTE ── */
+/* ─── COMPONENTE ───────────────────────────────────── */
 function Personagens() {
-  const [personagens, setPersonagens] = useState([])
-  const [selecionado, setSelecionado] = useState(null)
-  const [busca, setBusca] = useState("")
+  const [lista,      setLista]      = useState([])
+  const [detalhe,    setDetalhe]    = useState(null)
+  const [loadLista,  setLoadLista]  = useState(true)
+  const [loadDetail, setLoadDetail] = useState(false)
+  const [busca,      setBusca]      = useState("")
+  const [filtro,     setFiltro]     = useState("Todos")
+  const [cache,      setCache]      = useState({})
 
+  /* busca lista ao montar */
   useEffect(() => {
-    fetch("https://api.api-onepiece.com/v2/characters/en")
-      .then((res) => res.json())
-      .then((data) => setPersonagens(data))
-      .catch(() => alert("Erro ao carregar personagens"))
+    fetch("https://api.jikan.moe/v4/anime/21/characters")
+      .then((r) => {
+        if (!r.ok) throw new Error(r.status)
+        return r.json()
+      })
+      .then((json) => {
+        /* ordena por favoritos decrescente */
+        const ordenados = (json.data || []).sort(
+          (a, b) => (b.character.favorites || 0) - (a.character.favorites || 0)
+        )
+        setLista(ordenados)
+      })
+      .catch(() => alert("Erro ao carregar personagens. Tente recarregar a página."))
+      .finally(() => setLoadLista(false))
   }, [])
 
-  const filtrados = personagens.filter((p) =>
-    p.name.toLowerCase().includes(busca.toLowerCase())
-  )
+  /* abre detalhe buscando dados extras da Jikan */
+  function abrirDetalhe(item) {
+    window.scrollTo({ top: 0, behavior: "smooth" })
+    const id = item.character.mal_id
 
+    /* usa cache se já buscou antes */
+    if (cache[id]) {
+      setDetalhe({ base: item, extra: cache[id] })
+      return
+    }
+
+    setDetalhe({ base: item, extra: null })
+    setLoadDetail(true)
+
+    /* pequeno delay para respeitar rate limit da Jikan (3 req/s) */
+    setTimeout(() => {
+      fetch(`https://api.jikan.moe/v4/characters/${id}`)
+        .then((r) => {
+          if (!r.ok) throw new Error(r.status)
+          return r.json()
+        })
+        .then((json) => {
+          const extra = json.data || {}
+          setCache((prev) => ({ ...prev, [id]: extra }))
+          setDetalhe((prev) => ({ ...prev, extra }))
+        })
+        .catch(() => {}) /* falha silenciosa — mostra dados básicos */
+        .finally(() => setLoadDetail(false))
+    }, 400)
+  }
+
+  function fecharDetalhe() {
+    setDetalhe(null)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  /* filtros */
+  const roles = ["Todos", "Main", "Supporting"]
+
+  const filtrados = lista.filter((item) => {
+    const nome = formatarNome(item.character.name).toLowerCase()
+    const matchBusca = nome.includes(busca.toLowerCase())
+    const matchRole  = filtro === "Todos" || item.role === filtro
+    return matchBusca && matchRole
+  })
+
+  /* ── RENDER ── */
   return (
     <div className="container">
+
+      {/* CABEÇALHO */}
       <div className="header">
         <h1>👤 Personagens</h1>
-        <p>Total: {personagens.length} personagens</p>
+        <p>Total: {lista.length} personagens carregados</p>
       </div>
 
+      {/* BUSCA */}
       <input
         className="busca-input"
         type="text"
@@ -86,57 +114,149 @@ function Personagens() {
         onChange={(e) => setBusca(e.target.value)}
       />
 
-      {/* DETALHE DO PERSONAGEM */}
-      {selecionado && (
+      {/* FILTRO POR PAPEL */}
+      <div className="filtros-tipo">
+        {roles.map((r) => {
+          const { bg, cor } = corRole(r)
+          return (
+            <button
+              key={r}
+              className={`filtro-btn ${filtro === r ? "ativo" : ""}`}
+              style={filtro === r && r !== "Todos" ? { borderColor: cor, color: cor, background: bg } : {}}
+              onClick={() => setFiltro(r)}
+            >
+              {r === "Todos" ? "Todos" : traduzirRole(r)}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* CARD DE DETALHE */}
+      {detalhe && (
         <div className="info-card">
-          <button className="fechar-btn" onClick={() => setSelecionado(null)}>
-            ✕ Fechar
-          </button>
+          <button className="fechar-btn" onClick={fecharDetalhe}>✕ Fechar</button>
 
-          <h2>{selecionado.name}</h2>
+          <div className="detalhe-topo">
 
-          <p><strong>Cargo:</strong> {traduzirCargo(selecionado.job)}</p>
-          <p><strong>Status:</strong> {traduzirStatus(selecionado.status)}</p>
-          <p><strong>Idade:</strong> {formatarIdade(selecionado.age)}</p>
-          <p><strong>Altura:</strong> {selecionado.size || "—"}</p>
-          <p><strong>Aniversário:</strong> {selecionado.birthday || "—"}</p>
-          <p><strong>Recompensa:</strong> {selecionado.bounty ? `${selecionado.bounty} Berries` : "Sem recompensa"}</p>
+            {/* IMAGEM */}
+            <div className="detalhe-img-wrap">
+              <img
+                src={
+                  detalhe.extra?.images?.jpg?.image_url ||
+                  detalhe.base.character.images?.jpg?.image_url ||
+                  ""
+                }
+                alt={formatarNome(detalhe.base.character.name)}
+                className="detalhe-img"
+                onError={(e) => { e.target.src = ""; e.target.style.display = "none" }}
+              />
+            </div>
 
-          {selecionado.crew && (
-            <p><strong>Tripulação:</strong> {formatarNomeCrew(selecionado.crew)}</p>
-          )}
+            {/* DADOS */}
+            <div className="detalhe-dados">
+              <h2>{formatarNome(detalhe.base.character.name)}</h2>
 
-          {selecionado.fruit && (
-            <div className="fruta-destaque">
-              <p><strong>🍎 Akuma no Mi:</strong> {selecionado.fruit.name}</p>
-              <p className="fruta-tipo">{selecionado.fruit.type}</p>
-              {selecionado.fruit.filename && (
-                <img
-                  src={selecionado.fruit.filename}
-                  alt={selecionado.fruit.name}
-                  width="100"
-                />
+              {detalhe.extra?.name_kanji && (
+                <p><strong>Nome japonês:</strong> {detalhe.extra.name_kanji}</p>
+              )}
+
+              {detalhe.extra?.nicknames?.length > 0 && (
+                <p><strong>Apelidos:</strong> {detalhe.extra.nicknames.join(" · ")}</p>
+              )}
+
+              <p>
+                <strong>Papel:</strong>{" "}
+                <span
+                  className="role-badge"
+                  style={{
+                    background: corRole(detalhe.base.role).bg,
+                    color: corRole(detalhe.base.role).cor,
+                  }}
+                >
+                  {traduzirRole(detalhe.base.role)}
+                </span>
+              </p>
+
+              {detalhe.base.character.favorites > 0 && (
+                <p>
+                  <strong>Popularidade:</strong>{" "}
+                  ♥ {detalhe.base.character.favorites.toLocaleString("pt-BR")} favoritos no MyAnimeList
+                </p>
+              )}
+
+              {/* Dublador japonês */}
+              {detalhe.base.voice_actors?.length > 0 && (() => {
+                const jp = detalhe.base.voice_actors.find((v) => v.language === "Japanese")
+                return jp ? (
+                  <p><strong>Dublador (JP):</strong> {formatarNome(jp.person.name)}</p>
+                ) : null
+              })()}
+
+              {/* Carregando detalhes */}
+              {loadDetail && (
+                <p className="load-text">⏳ Buscando detalhes…</p>
+              )}
+
+              {/* Bio */}
+              {detalhe.extra?.about && (
+                <div className="about-box">
+                  <strong>Sobre:</strong>
+                  <p>{detalhe.extra.about.slice(0, 500)}{detalhe.extra.about.length > 500 ? "…" : ""}</p>
+                </div>
               )}
             </div>
-          )}
+          </div>
+        </div>
+      )}
+
+      {/* CARREGANDO LISTA */}
+      {loadLista && (
+        <div className="loading-msg">
+          <span className="spinner-small" />
+          <p>Carregando personagens…</p>
         </div>
       )}
 
       {/* LISTA */}
+      {!loadLista && filtrados.length === 0 && (
+        <p className="sem-resultado">Nenhum personagem encontrado.</p>
+      )}
+
       <div className="lista">
-        {filtrados.map((p) => (
-          <div className="card" key={p.id}>
-            <div className="card-info">
-              <p>{p.name}</p>
-              <p className="card-sub">{traduzirCargo(p.job)}</p>
+        {filtrados.map((item) => {
+          const { bg, cor } = corRole(item.role)
+          return (
+            <div className="card" key={item.character.mal_id}>
+
+              <img
+                src={item.character.images?.jpg?.small_image_url || item.character.images?.jpg?.image_url || ""}
+                alt={formatarNome(item.character.name)}
+                className="card-avatar"
+                onError={(e) => { e.target.style.display = "none" }}
+              />
+
+              <div className="card-info">
+                <p>{formatarNome(item.character.name)}</p>
+                <p className="card-sub">{traduzirRole(item.role)}</p>
+              </div>
+
+              {item.character.favorites > 0 && (
+                <span className="fav-count">♥ {item.character.favorites.toLocaleString("pt-BR")}</span>
+              )}
+
+              <span
+                className="role-badge"
+                style={{ background: bg, color: cor }}
+              >
+                {traduzirRole(item.role)}
+              </span>
+
+              <button onClick={() => abrirDetalhe(item)}>Ver mais</button>
             </div>
-            <span className={`status-badge status-${(p.status || "").toLowerCase()}`}>
-              {traduzirStatus(p.status)}
-            </span>
-            <button onClick={() => setSelecionado(p)}>Ver mais</button>
-          </div>
-        ))}
+          )
+        })}
       </div>
+
     </div>
   )
 }

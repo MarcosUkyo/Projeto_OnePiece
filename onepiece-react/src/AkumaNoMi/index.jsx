@@ -3,13 +3,9 @@ import "./style.css"
 
 function traduzirTipo(tipo) {
   const mapa = {
-    Paramecia: "Paramecia",
-    Logia: "Logia",
-    Zoan: "Zoan",
-    "Zoan Mythique": "Zoan Mítico",
-    "Zoan Ancient": "Zoan Antigo",
-    "Zoan ancienne": "Zoan Antigo",
-    "Zoan mythique": "Zoan Mítico",
+    Paramecia: "Paramecia", Logia: "Logia", Zoan: "Zoan",
+    "Zoan Mythique": "Zoan Mítico", "Zoan Ancient": "Zoan Antigo",
+    "Zoan ancienne": "Zoan Antigo", "Zoan mythique": "Zoan Mítico",
   }
   return mapa[tipo] || tipo || "—"
 }
@@ -17,23 +13,23 @@ function traduzirTipo(tipo) {
 function corTipo(tipo) {
   if (!tipo) return "#64748b"
   const t = tipo.toLowerCase()
-  if (t.includes("logia"))              return "#f59e0b"
+  if (t.includes("logia"))                          return "#f59e0b"
   if (t.includes("mythique") || t.includes("mítico")) return "#8b5cf6"
   if (t.includes("ancienne") || t.includes("antigo")) return "#10b981"
-  if (t.includes("zoan"))               return "#22c55e"
-  if (t.includes("paramecia"))          return "#3b82f6"
+  if (t.includes("zoan"))                           return "#22c55e"
+  if (t.includes("paramecia"))                      return "#3b82f6"
   return "#64748b"
 }
 
 function Frutas() {
-  const [frutas,     setFrutas]     = useState([])
+  const [frutas,      setFrutas]      = useState([])
   const [selecionada, setSelecionada] = useState(null)
-  const [busca,      setBusca]      = useState("")
-  const [filtroTipo, setFiltroTipo] = useState("Todos")
+  const [busca,       setBusca]       = useState("")
+  const [filtroTipo,  setFiltroTipo]  = useState("Todos")
 
   useEffect(() => {
     fetch("https://api.api-onepiece.com/v2/fruits/en")
-      .then((res) => res.json())
+      .then((r) => r.json())
       .then((data) => setFrutas(data))
       .catch(() => alert("Erro ao carregar frutas"))
   }, [])
@@ -45,6 +41,16 @@ function Frutas() {
     const matchTipo  = filtroTipo === "Todos" || f.type === filtroTipo
     return matchBusca && matchTipo
   })
+
+  function abrirDetalhe(f) {
+    setSelecionada(f)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  function fecharDetalhe() {
+    setSelecionada(null)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
 
   return (
     <div className="container">
@@ -67,11 +73,9 @@ function Frutas() {
           <button
             key={t}
             className={`filtro-btn ${filtroTipo === t ? "ativo" : ""}`}
-            style={
-              filtroTipo === t && t !== "Todos"
-                ? { borderColor: corTipo(t), color: corTipo(t), background: corTipo(t) + "20" }
-                : {}
-            }
+            style={filtroTipo === t && t !== "Todos"
+              ? { borderColor: corTipo(t), color: corTipo(t), background: corTipo(t) + "20" }
+              : {}}
             onClick={() => setFiltroTipo(t)}
           >
             {traduzirTipo(t)}
@@ -82,7 +86,7 @@ function Frutas() {
       {/* DETALHE */}
       {selecionada && (
         <div className="info-card">
-          <button className="fechar-btn" onClick={() => setSelecionada(null)}>✕ Fechar</button>
+          <button className="fechar-btn" onClick={fecharDetalhe}>✕ Fechar</button>
           {selecionada.filename && (
             <img src={selecionada.filename} alt={selecionada.name} width="140" />
           )}
@@ -92,13 +96,8 @@ function Frutas() {
           )}
           <p>
             <strong>Tipo:</strong>{" "}
-            <span
-              className="tipo-tag"
-              style={{
-                background: corTipo(selecionada.type) + "20",
-                color: corTipo(selecionada.type),
-              }}
-            >
+            <span className="tipo-tag"
+              style={{ background: corTipo(selecionada.type) + "20", color: corTipo(selecionada.type) }}>
               {traduzirTipo(selecionada.type)}
             </span>
           </p>
@@ -113,26 +112,20 @@ function Frutas() {
         {filtradas.map((f) => (
           <div className="card" key={f.id}>
             {f.filename && (
-              <img
-                src={f.filename}
-                alt={f.name}
-                className="fruta-mini"
-                onError={(e) => { e.target.style.display = "none" }}
-              />
+              <img src={f.filename} alt={f.name} className="fruta-mini"
+                onError={(e) => { e.target.style.display = "none" }} />
             )}
             <div className="card-info">
               <p>{f.name}</p>
               {f.roman_name && <p className="card-sub">{f.roman_name}</p>}
             </div>
             {f.type && (
-              <span
-                className="tipo-tag"
-                style={{ background: corTipo(f.type) + "20", color: corTipo(f.type) }}
-              >
+              <span className="tipo-tag"
+                style={{ background: corTipo(f.type) + "20", color: corTipo(f.type) }}>
                 {traduzirTipo(f.type)}
               </span>
             )}
-            <button onClick={() => setSelecionada(f)}>Ver mais</button>
+            <button onClick={() => abrirDetalhe(f)}>Ver mais</button>
           </div>
         ))}
       </div>

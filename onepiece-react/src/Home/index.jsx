@@ -25,7 +25,7 @@ function Home({ setPage }) {
         <div className="home-card" onClick={() => setPage("personagens")}>
           <span className="card-icone">👤</span>
           <h2>Personagens</h2>
-          <p>786 personagens do universo de One Piece</p>
+          <p>1475 personagens do universo de One Piece</p>
         </div>
 
         <div className="home-card" onClick={() => setPage("frutas")}>
