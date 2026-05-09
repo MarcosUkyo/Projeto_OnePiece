@@ -1,0 +1,59 @@
+/* ── STATUS BADGE ── */
+.card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.status-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.status-vivant,
+.status-living,
+.status-alive {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.status-mort,
+.status-dead {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.status-unknown,
+.status-inconnu {
+  background: rgba(100, 116, 139, 0.15);
+  color: #94a3b8;
+}
+
+/* ── FRUTA NO CARD DE DETALHE ── */
+.fruta-destaque {
+  margin-top: 14px;
+  padding: 14px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 10px;
+}
+
+.fruta-destaque p {
+  margin-bottom: 4px !important;
+}
+
+.fruta-tipo {
+  font-size: 0.8rem !important;
+  color: #94a3b8 !important;
+  font-style: italic;
+}
+
+.fruta-destaque img {
+  display: block;
+  margin-top: 10px;
+  border-radius: 8px;
+}
