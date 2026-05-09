@@ -43,7 +43,7 @@ function Home({ setPage }) {
 
       {/* QUOTE */}
       <div className="home-quote">
-        <blockquote>"People's dreams... never end!"</blockquote>
+        <blockquote>"O sonho das pessoas... não tem fim!"</blockquote>
         <cite>— Marshall D. Teach (Barba Negra)</cite>
       </div>
 

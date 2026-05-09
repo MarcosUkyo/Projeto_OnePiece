@@ -45,7 +45,7 @@ function traduzirCargo(job) {
 
 function formatarIdade(age) {
   if (!age) return "—"
-  return age.replace(" ans", " anos").replace(" an", " ano")
+  return age.replace(" ans", " anos").replace(" ans", " ano")
 }
 
 function formatarNomeCrew(crew) {
