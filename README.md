@@ -56,10 +56,13 @@ npm run dev
 
 ---
 
-# 🌐 API Utilizada
+# 🌐 API Utilizadas
 
 ```txt
 https://api.api-onepiece.com
+```
+
+``` https://api.jikan.moe/v4/anime/21/characters"
 ```
 
 ---
