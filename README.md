@@ -62,7 +62,7 @@ npm run dev
 https://api.api-onepiece.com
 ```
 
-``` https://api.jikan.moe/v4/anime/21/characters"
+```txt https://api.jikan.moe/v4/anime/21/characters"
 ```
 
 ---
